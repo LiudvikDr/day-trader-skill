@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+# your trades, config and state: never commit them
+trader/

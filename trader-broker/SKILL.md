@@ -135,6 +135,29 @@ submits orders directly to the market. So with IBKR the final yes happens in
 IBKR as well. Set `"broker": "ibkr"` in `trader/config.json`. Set its tools
 that draft orders to Needs approval too.
 
+## Setup C: Co-Invest (Liquid), paper only
+
+Co-Invest's connector (`mcp__Co-Invest__*`) trades Liquid's perpetual
+markets (stocks like xyz:MU, indices, commodities, crypto). This pack uses only
+its paper route:
+
+1. `paper_trading_status` must say ENABLED. If not, ask the user, then
+   `enable_paper_trading`. Never call `disable_paper_trading` yourself.
+2. Gates 1 and 2 as always: trader-risk PASS, `ticket.py show`, the user's
+   yes, `ticket.py approve`.
+3. `python3 "${CLAUDE_SKILL_DIR}/../trader-scanner/coinvest.py" order --index N`
+   prints the `suggest_order` arguments: long, leverage 1, market, size =
+   shares x entry in USD, the plan's stop-loss and take-profit. Call
+   `suggest_order` with exactly those. It never places anything: it returns
+   a paper review link, and the user places the order in Liquid themselves
+   (that is gate 3). Give the link exactly as returned.
+4. Check what happened with `get_portfolio` or `view_open_orders`; record it
+   with `ticket.py result`. Never say an order filled without checking.
+
+Never call `execute_order`, `execute_orders_batch`, `enable_automated_trading`
+or any leverage above 1 from this pack. To get out by the close, use
+`close_position` (it previews), show the preview, and wait for the user's yes.
+
 ## Steps: the entry
 
 1. `ticket.py show`. Only READY tickets go to the user. A ticket that is NOT

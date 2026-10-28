@@ -147,6 +147,13 @@ python3 trader-pelosi/ptr.py index --member pelosi                     # her PTR
 python3 -m unittest discover -s tests -v
 ```
 
+**No Yahoo or Nasdaq Trader?** With the Co-Invest connector, Claude saves
+Liquid's markets (`search_markets`) and candles (`show_chart`) to files and
+`trader-scanner/coinvest.py` turns them into what the tools read: `universe`
+for the symbol list, `bars` for the charts (`--offline trader/bars`), `order`
+for a paper-only `suggest_order`. The Time Machine still needs Yahoo's 60 days
+of 5-minute bars. See trader-scanner's SKILL.md.
+
 The tests run offline, on fixtures cut from real data: TSLA's 5-minute bars
 for the 60 days to October 19 2026, the 10:15 AM opening-range scan, Yahoo's
 TSLA headlines that morning, the House Clerk's 2026 index, real PTR text and
@@ -199,7 +206,7 @@ wash sales likely. Nothing here is tax advice.
 ## Files
 
 ```
-trader-scanner/     SKILL.md, scan.py
+trader-scanner/     SKILL.md, scan.py, coinvest.py (Co-Invest / Liquid data)
 trader-news/        SKILL.md, news.py
 trader-entry/       SKILL.md, entry.py
 trader-exit/        SKILL.md, exit.py

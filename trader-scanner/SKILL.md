@@ -8,7 +8,7 @@ description: >-
   flag, reclaimed the 20-day average, oversold, oversold bounce) and an
   intraday opening-range breakout scan on 5-minute bars, then writes
   trader/watchlist.json for trader-news and trader-entry. Free Yahoo data,
-  bar by bar. Use when the user says "scan the market", "find me setups",
+  bar by bar, or Liquid's markets through the Co-Invest connector (coinvest.py). Use when the user says "scan the market", "find me setups",
   "what is breaking out", "opening range breakouts", "scan for bull flags",
   "oversold stocks", "pre-market scan", "build my watchlist", "what should I
   look at today", or at the start of a trading day before /trader-news.
@@ -130,6 +130,35 @@ bar counts only once it is complete (start + 5 minutes). Before 9:50 AM, on a
 weekend or holiday, after the close, or after `no_entries_after` (an expired
 setup) it prints one plain line and writes nothing. The 1:00 PM early closes
 are in the calendar.
+
+## Co-Invest (Liquid) instead of Nasdaq Trader and Yahoo
+
+When the Co-Invest connector is connected (its tools are `mcp__Co-Invest__*`),
+or Yahoo and nasdaqtrader.com cannot be reached, scan Liquid's markets with
+`coinvest.py`. The connector is an MCP server, so you call it and save each
+answer to a file exactly as it came back; `coinvest.py` turns the files into
+what `scan.py` and the other tools already read.
+
+1. Universe: call `search_markets` (no query: the top markets by volume; or a
+   query such as "tech"), save the answer to `trader/coinvest/markets.json`,
+   then `python3 "${CLAUDE_SKILL_DIR}/coinvest.py" universe trader/coinvest/markets.json`.
+   It writes `trader/universe.txt` and `trader/liquid_symbols.json` (MU -> xyz:MU).
+2. Daily scan: call `show_chart` with `interval: "1d", limit: 60` for each
+   market, save each answer (or a `{symbol: answer}` bundle), then
+   `coinvest.py bars trader/coinvest/*.json` and
+   `scan.py daily --offline trader/bars --min-volume 0 --min-price 0`.
+3. Opening-range scan, after 9:50 AM ET: `show_chart` with `interval: "5m",
+   limit: 200` for each market, `coinvest.py bars ...`, then
+   `scan.py orb --offline trader/bars --at HH:MM --min-volume 0`.
+4. trader-entry and trader-exit read the same folder: `--offline trader/bars`.
+
+Limits, said plainly to the user: `show_chart` gives at most 200 candles a
+call, so 5-minute bars reach back about 16 hours. Volume is Liquid contracts,
+not shares, so the volume floor is off. Liquid's stock markets are perpetual
+futures that trade around the clock; the scans still use the 9:30 to 4:00
+New York session and drop weekend daily candles. The Time Machine needs 60
+sessions of 5-minute bars, which `show_chart` cannot give: without Yahoo, skip
+it and say so. Never make up candles to fill a gap.
 
 ## Data and limits
 

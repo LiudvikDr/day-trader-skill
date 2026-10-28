@@ -41,6 +41,11 @@ saved Yahoo chart JSON, `.json` or `.json.gz`, or a folder of
 `watch` with `--now` or `--offline` runs on a simulated clock and replays the
 day bar by bar without waiting.
 
+No Yahoo? With the Co-Invest connector, save `show_chart` (`interval: "5m",
+limit: 200`) for the ticker and run `trader-scanner/coinvest.py bars` on it,
+then `entry.py check TICKER --offline trader/bars --now "YYYY-MM-DD HH:MM"`
+each time you refresh the candles (see trader-scanner, "Co-Invest").
+
 ## What it reads and writes
 
 | file | what |

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tessera · Floor Pattern Planner</title>
+  <meta name="description" content="Map your room, enter your tile or floorboard size, and compare fashionable floor patterns with exact cut counts and material estimates.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 4h11v11H4zM17 4h11v6H17zM17 12h11v16H17zM4 17h11v11H4z"/></svg>
+      <div><strong>Tessera</strong><span>floor pattern planner</span></div>
+    </div>
+    <div class="actions">
+      <button type="button" id="btn-link" class="ghost">Copy link</button>
+      <button type="button" id="btn-png" class="ghost">Export PNG</button>
+      <button type="button" id="btn-print">Print plan</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel" aria-label="Settings">
+      <section>
+        <h2><span>1</span> Room</h2>
+        <div class="seg" role="radiogroup" aria-label="Units" data-bind="units">
+          <button type="button" data-value="cm">Metric (cm)</button>
+          <button type="button" data-value="in">Imperial (in)</button>
+        </div>
+        <div class="seg" role="radiogroup" aria-label="Room shape" data-bind="shape">
+          <button type="button" data-value="rect">Rectangle</button>
+          <button type="button" data-value="l">L-shape</button>
+          <button type="button" data-value="custom">Custom</button>
+        </div>
+        <div class="grid2" data-show="rect l">
+          <label>Width <input type="number" min="1" step="any" data-bind="roomW"><em class="u"></em></label>
+          <label>Length <input type="number" min="1" step="any" data-bind="roomL"><em class="u"></em></label>
+        </div>
+        <div class="grid2" data-show="l">
+          <label>Notch width <input type="number" min="1" step="any" data-bind="notchW"><em class="u"></em></label>
+          <label>Notch length <input type="number" min="1" step="any" data-bind="notchL"><em class="u"></em></label>
+        </div>
+        <div data-show="custom">
+          <label class="block">Corners — one <code>x, y</code> per line, walking around the room
+            <textarea rows="7" data-bind="custom" spellcheck="false"></textarea>
+          </label>
+          <p class="hint" id="custom-msg"></p>
+        </div>
+      </section>
+
+      <section>
+        <h2><span>2</span> Material</h2>
+        <div class="seg" role="radiogroup" aria-label="Material" data-bind="material">
+          <button type="button" data-value="tile">Tiles</button>
+          <button type="button" data-value="wood">Wood boards</button>
+        </div>
+        <div class="grid3">
+          <label><span data-label="L">Length</span> <input type="number" min="0.5" step="any" data-bind="L"><em class="u"></em></label>
+          <label><span data-label="W">Width</span> <input type="number" min="0.5" step="any" data-bind="W"><em class="u"></em></label>
+          <label><span data-label="gap">Grout</span> <input type="number" min="0" step="any" data-bind="gap"><em class="u"></em></label>
+        </div>
+        <div class="presets" id="presets" aria-label="Common sizes"></div>
+        <div class="swatches" id="swatches" role="radiogroup" aria-label="Finish"></div>
+        <div class="grid2">
+          <label>Pieces per box <input type="number" min="0" step="1" data-bind="perBox" placeholder="optional"></label>
+          <label>Price / <span class="ua">m²</span> <input type="number" min="0" step="any" data-bind="price" placeholder="optional"></label>
+        </div>
+      </section>
+
+      <section>
+        <h2><span>3</span> Fine-tune</h2>
+        <label class="block">Rotation <output id="rot-out">0°</output>
+          <input type="range" min="-90" max="90" step="1" data-bind="rotation">
+        </label>
+        <div class="grid2">
+          <label>Shift along <input type="number" step="any" data-bind="shiftU"><em class="u"></em></label>
+          <label>Shift across <input type="number" step="any" data-bind="shiftV"><em class="u"></em></label>
+        </div>
+        <div class="row">
+          <button type="button" id="btn-opt" class="primary">✦ Minimise cuts</button>
+          <button type="button" id="btn-reset" class="ghost">Reset</button>
+          <button type="button" id="btn-shuffle" class="ghost" data-show-pattern="random diagonal-plank">Shuffle</button>
+        </div>
+        <p class="hint" id="opt-msg"></p>
+        <label class="check"><input type="checkbox" data-bind="showCuts"> Highlight cut pieces</label>
+        <label class="check"><input type="checkbox" data-bind="showDims"> Show wall dimensions</label>
+        <label class="block">Extra for waste &amp; spares
+          <select data-bind="spare">
+            <option value="auto">Auto (by pattern)</option>
+            <option value="0.05">5 %</option>
+            <option value="0.10">10 %</option>
+            <option value="0.15">15 %</option>
+            <option value="0.20">20 %</option>
+          </select>
+        </label>
+      </section>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-head">
+        <div>
+          <p class="eyebrow">Selected pattern</p>
+          <h1 id="pattern-name">—</h1>
+          <p id="pattern-desc"></p>
+        </div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="plan" aria-label="Floor plan preview"></canvas>
+        <div id="tip" role="status"></div>
+      </div>
+      <div class="stats" id="stats"></div>
+
+      <h2 class="section-title">Pattern ideas for this room <small>click to try one</small></h2>
+      <div class="gallery" id="gallery"></div>
+
+      <details class="cutlist">
+        <summary>Cut list <span id="cut-count"></span></summary>
+        <p class="hint">Each cut piece measured along its length × width. Angled cuts are measured by their longest extent.</p>
+        <div class="table-wrap"><table id="cuts"></table></div>
+      </details>
+
+      <details class="howto">
+        <summary>How the maths works</summary>
+        <ul>
+          <li>The room is a polygon; its area comes from the shoelace formula.</li>
+          <li>Each pattern is an infinite tiling (rows, or a lattice of motifs). It is rotated and shifted into the room, and every piece is clipped against the room outline with Sutherland–Hodgman polygon clipping.</li>
+          <li>A piece is <b>full</b> if its clipped area equals its own area, otherwise it is a <b>cut</b>. A cut narrower than ¼ of the piece in either direction is flagged as a <b>sliver</b> — hard to cut and likely to crack or look untidy.</li>
+          <li><b>Minimise cuts</b> searches shifts across one repeat of the pattern and keeps the layout with the fewest slivers, then the fewest cuts.</li>
+          <li>Order quantity: tiles = every piece that touches the floor (cut tiles rarely reuse offcuts) plus 5 % spare. Boards = floor area ÷ board area plus the pattern's typical waste (7 % random stagger up to 15 % herringbone/chevron), because row-end offcuts start the next row.</li>
+        </ul>
+      </details>
+    </section>
+  </main>
+
+  <footer class="foot">Plans are estimates — always measure twice and confirm quantities with your supplier.</footer>
+
+  <script src="js/geometry.js"></script>
+  <script src="js/patterns.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
